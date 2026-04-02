@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PokeDoro</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#6AB1B1">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --shell-bg:#CEEFF7;
+    --panel-bg:#B5DEDE;
+    --panel-border:#94B5B5;
+    --screen-bg:#EFFDF4;
+    --btn-border:#7B949C;
+    --btn-text:#7B949C;
+    --btn-bg:rgba(181,222,222,0.2);
+    --btn-active-bg:#CEEFF7;
+    --accent:#facc15;--green:#22c55e;--blue:#3b82f6;
+    --dark-gray:#374151;--text:#1f2937;
+  }
+  body{
+    font-family:'Roboto Mono','Press Start 2P',monospace;
+    background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    margin:0;color:var(--text);padding:1rem;
+  }
+
+  /* ===== SHELL ===== */
+  .shell{
+    position:relative;width:95%;max-width:448px;
+    aspect-ratio:1/1.1;max-height:520px;
+    background:var(--shell-bg);border-radius:12px;
+    box-shadow:0 25px 60px rgba(0,0,0,.5);
+    overflow:hidden;
+  }
+
+  /* ===== PANEL ===== */
+  .panel{
+    position:absolute;
+    width:95.4%;height:80.8%;
+    left:2.3%;top:7.3%;
+    background:var(--panel-bg);
+    border:1px solid var(--panel-border);
+    border-radius:8px;
+  }
+
+  /* ===== SCREEN ===== */
+  .screen{
+    position:absolute;
+    width:91.1%;height:82.2%;
+    left:4.45%;top:4.7%;
+    background:var(--screen-bg);
+    border:2px solid var(--btn-border);border-radius:2px;
+    overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .view{display:none;width:100%;height:100%}
+  .view.active{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:100%;height:100%;overflow:hidden;padding:7% 7%}
+
+  /* ===== CONTENT GROUPS ===== */
+  .main-status-group{display:flex;flex-direction:column;align-items:center;gap:0px}
+  .xp-section{width:100%;flex-shrink:0}
+
+  /* ===== NAV BUTTONS (START / POKEDEX / RESET) ===== */
+  .nav-bar{
+    position:absolute;bottom:0;left:4.1%;right:4.1%;
+    display:flex;height:9.7%;
+  }
+  .nav-btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    border:2px solid var(--btn-border);
+    background:var(--btn-bg);
+    box-shadow:inset 4px 4px 4px rgba(255,255,255,0.5), inset 0px -3px 4px rgba(0,0,0,0.25);
+    font-family:'Roboto Mono',monospace;font-style:normal;font-weight:500;
+    font-size:clamp(11px,2.8vw,16px);line-height:1.3;letter-spacing:0.15em;
+    color:var(--btn-text);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s,color .15s,transform .1s,box-shadow .1s,opacity .15s;
+    padding:0;position:relative;top:0;
+  }
+  .nav-btn:first-child{
+    flex:94;border-radius:12px 0 0 0;
+  }
+  .nav-btn:nth-child(2){
+    flex:97;border-radius:0;
+  }
+  .nav-btn:last-child{
+    flex:94;border-radius:0 12px 0 0;
+    box-shadow:inset 4px 4px 4px rgba(255,255,255,0.5), inset -3px -3px 4px rgba(0,0,0,0.25);
+  }
+  .nav-btn.active{
+    background:var(--btn-active-bg);
+    color:#5a7078;
+  }
+  .nav-btn:hover:not(.active):not(.disabled){
+    background:rgba(206,239,247,0.5);
+    box-shadow:inset 4px 4px 4px rgba(255,255,255,0.65), inset 0px -3px 4px rgba(0,0,0,0.15);
+  }
+  .nav-btn:active:not(.disabled){
+    transform:translateY(2px);
+    box-shadow:inset 2px 2px 3px rgba(0,0,0,0.2), inset 0px 1px 2px rgba(0,0,0,0.15);
+  }
+  .nav-btn.disabled{
+    pointer-events:none;opacity:0.5;
+  }
+
+  /* ===== SETTINGS BUTTON ===== */
+  .settings-btn{
+    position:absolute;left:6.7%;bottom:4%;
+    display:flex;align-items:center;gap:6px;
+    cursor:pointer;background:none;border:none;padding:0;
+  }
+  .settings-circle{
+    width:clamp(14px,5%,19px);height:clamp(14px,5%,19px);border-radius:50%;
+    background:var(--shell-bg);
+    border:1px solid var(--btn-border);
+    box-shadow:1px 1px 2px rgba(0,0,0,0.15),
+      inset -2px -2px 4px rgba(0,0,0,0.25),
+      inset 3px 3px 3px rgba(255,255,255,0.5);
+  }
+  .settings-label{
+    font-family:'Roboto Mono',monospace;font-weight:500;
+    font-size:clamp(9px,3.2vw,12px);line-height:16px;letter-spacing:0.1em;
+    color:var(--btn-border);
+  }
+
+  /* ===== SPRITE ===== */
+  .sprite-container{position:relative;width:clamp(48px,16vw,100px);height:clamp(48px,16vw,100px);margin:0 auto 2px}
+  .sprite-container img{
+    width:100%;height:100%;image-rendering:pixelated;
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,.12));
+    transition:filter .4s, transform .4s;
+  }
+  .sprite-container img:hover{transform:scale(1.1)}
+  .shiny-badge{
+    position:absolute;top:0;right:-4px;font-size:1rem;
+    animation:sparkle 1.5s ease-in-out infinite;
+  }
+  @keyframes sparkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.2)}}
+
+  .sprite-container.shiny-active img{
+    filter:drop-shadow(0 0 10px rgba(250,204,21,.7)) drop-shadow(0 0 20px rgba(250,204,21,.35));
+  }
+  .sprite-container.shiny-active::before,
+  .sprite-container.shiny-active::after{
+    content:'\2728';position:absolute;font-size:.7rem;
+    animation:shiny-particle 2s ease-in-out infinite;pointer-events:none;
+  }
+  .sprite-container.shiny-active::before{top:6px;left:2px;animation-delay:0s}
+  .sprite-container.shiny-active::after{bottom:10px;right:0;animation-delay:1s}
+  @keyframes shiny-particle{
+    0%,100%{opacity:0;transform:translateY(0) scale(.5)}
+    25%{opacity:1;transform:translateY(-6px) scale(1)}
+    75%{opacity:.7;transform:translateY(-12px) scale(.8)}
+  }
+  .shiny-particle-extra{
+    position:absolute;font-size:.55rem;pointer-events:none;
+    animation:shiny-particle 2.5s ease-in-out infinite;
+  }
+
+  /* ===== EVOLUTION ANIMATIONS ===== */
+  .legendary-finish .sprite-container img{
+    filter:drop-shadow(0 0 24px rgba(139,92,246,.8)) drop-shadow(0 0 48px rgba(236,72,153,.4));
+  }
+  .legendary-screen-shake{animation:screen-shake .5s ease-in-out}
+  @keyframes screen-shake{
+    0%,100%{transform:translate(0)}
+    10%{transform:translate(-3px,-2px)}20%{transform:translate(4px,1px)}
+    30%{transform:translate(-4px,3px)}40%{transform:translate(3px,-3px)}
+    50%{transform:translate(-2px,4px)}60%{transform:translate(4px,-1px)}
+    70%{transform:translate(-3px,2px)}80%{transform:translate(2px,-4px)}
+    90%{transform:translate(-1px,3px)}
+  }
+  .lens-flare{
+    position:absolute;top:50%;left:50%;width:160px;height:160px;
+    transform:translate(-50%,-50%);pointer-events:none;z-index:3;
+    background:radial-gradient(ellipse at center,rgba(255,255,255,.9) 0%,rgba(250,204,21,.3) 30%,transparent 70%);
+    animation:lens-flare-pulse 1.5s ease-out both;border-radius:50%;
+  }
+  @keyframes lens-flare-pulse{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}
+    30%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(2)}
+  }
+  .evo-shake .sprite-container img{animation:evo-shake .6s linear infinite}
+  @keyframes evo-shake{
+    0%,100%{transform:translateX(0)}
+    10%{transform:translateX(-4px) rotate(-1deg)}20%{transform:translateX(4px) rotate(1deg)}
+    30%{transform:translateX(-5px) rotate(-2deg)}40%{transform:translateX(5px) rotate(2deg)}
+    50%{transform:translateX(-4px) rotate(-1deg)}60%{transform:translateX(4px) rotate(1deg)}
+    70%{transform:translateX(-3px)}80%{transform:translateX(3px)}90%{transform:translateX(-2px)}
+  }
+  .evo-whiteout .sprite-container img{
+    animation:none;
+    filter:brightness(0) invert(1) drop-shadow(0 0 24px #fff);
+    transform:scale(1.4);
+    transition:filter 1s ease-in, transform 1.2s ease-in;
+  }
+  .evo-reveal .sprite-container img{
+    animation:evo-reveal-pop .8s ease-out both;
+    filter:drop-shadow(0 0 16px rgba(250,204,21,.6));
+  }
+  @keyframes evo-reveal-pop{
+    0%{transform:scale(1.4);filter:brightness(3) drop-shadow(0 0 32px #fff)}
+    40%{transform:scale(.9)}70%{transform:scale(1.05)}
+    100%{transform:scale(1);filter:drop-shadow(0 0 16px rgba(250,204,21,.6))}
+  }
+  .evo-sparkle{
+    position:absolute;font-size:.9rem;pointer-events:none;
+    animation:evo-sparkle-fly 1.2s ease-out both;
+  }
+  @keyframes evo-sparkle-fly{
+    0%{opacity:1;transform:translate(0,0) scale(1)}
+    100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(0)}
+  }
+
+  /* Evolution text overlay */
+  .evo-text-overlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;z-index:10;
+    background:rgba(0,0,0,.65);opacity:0;pointer-events:none;transition:opacity .3s;
+  }
+  .evo-text-overlay.visible{opacity:1;pointer-events:auto}
+  .evo-text-overlay .evo-msg{
+    color:#fff;font-size:.5rem;font-weight:600;font-family:'Press Start 2P',monospace;
+    text-shadow:0 2px 8px rgba(0,0,0,.5);margin-bottom:4px;
+    text-align:center;padding:0 16px;line-height:1.35;
+  }
+  .evo-text-overlay .evo-msg-big{
+    color:var(--accent);font-size:.6rem;font-weight:800;font-family:'Press Start 2P',monospace;
+    text-shadow:0 2px 12px rgba(250,204,21,.5);animation:evo-name-pop .6s ease-out both;
+  }
+  .evo-text-overlay .evo-msg-sub{
+    color:#d1d5db;font-size:.35rem;margin-top:6px;animation:fade-in 1s 1s both;font-family:'Press Start 2P',monospace;
+  }
+  .evo-text-overlay .evo-new-sprite{
+    width:96px;height:96px;image-rendering:pixelated;margin:6px 0;
+    filter:drop-shadow(0 0 16px rgba(250,204,21,.6));animation:evo-bounce .8s ease-out both;
+  }
+  @keyframes evo-bounce{0%{transform:scale(.3);opacity:0}50%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+  @keyframes evo-name-pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes fade-in{0%{opacity:0}100%{opacity:1}}
+
+  /* ===== POKEMON INFO ===== */
+  .poke-name{font-size:clamp(8px,2.5vw,13px);font-weight:700;color:var(--dark-gray);margin-bottom:2px;text-transform:capitalize;line-height:1.5;font-family:'Press Start 2P',monospace}
+  .poke-stage{font-size:clamp(7px,2vw,11px);color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;line-height:1.5;font-family:'Roboto Mono',monospace;font-weight:500}
+
+  /* ===== TIMER ===== */
+  .timer-display{
+    font-size:clamp(20px,6vw,38px);font-weight:800;font-variant-numeric:tabular-nums;
+    color:var(--dark-gray);line-height:1;margin-bottom:4px;
+    font-family:'Press Start 2P','Courier New',monospace;
+  }
+  .timer-label{font-size:clamp(7px,1.8vw,10px);color:#6b7280;margin-bottom:0;font-weight:500;text-transform:uppercase;letter-spacing:1px;line-height:1.5;font-family:'Roboto Mono',monospace}
+  .running .timer-display{animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.85;transform:scale(1.02)}}
+
+  /* ===== XP BAR ===== */
+  .xp-label{display:flex;justify-content:space-between;font-size:clamp(7px,1.8vw,11px);color:#6b7280;margin-bottom:3px;font-weight:500;font-family:'Roboto Mono',monospace}
+  .xp-bar{width:100%;height:8px;background:#d1e7e7;border-radius:99px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.1)}
+  .xp-fill{height:100%;border-radius:99px;transition:width .6s ease;background:linear-gradient(90deg,var(--green),#4ade80);box-shadow:0 0 6px rgba(34,197,94,.4)}
+  .xp-fill.maxed{background:linear-gradient(90deg,var(--accent),#fbbf24)}
+  .sessions-count{font-size:clamp(8px,2vw,12px);color:#7B949C;margin-top:3px;font-family:'Roboto Mono',monospace;font-weight:500}
+
+  /* ===== MODE TOGGLE ===== */
+  .mode-toggle{
+    position:relative;width:120px;height:24px;
+    background:#C7EAEA;border:.7px solid #C8E4E4;
+    box-shadow:1px 1px 3px rgba(0,0,0,.15);border-radius:20px;
+    display:flex;align-items:center;flex-shrink:0;margin-bottom:6px;overflow:hidden;
+  }
+  .mode-toggle button{
+    position:relative;z-index:1;
+    width:60px;height:24px;
+    border:none;background:transparent;border-radius:20px;
+    font-family:'Roboto Mono',monospace;font-style:normal;font-weight:500;
+    font-size:.6rem;line-height:1;letter-spacing:.1em;text-transform:uppercase;
+    color:#6B7280;cursor:pointer;transition:color .15s;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .mode-toggle button.active{
+    background:#fff;border:.7px solid #C8E4E4;
+    box-shadow:none;color:#6AB1B1;
+  }
+
+  /* ===== BACK BUTTON ===== */
+  .back-btn{
+    position:absolute;top:16px;left:16px;z-index:2;
+    width:24px;height:24px;
+    border:none;background:none;
+    color:#9ab5b5;cursor:pointer;padding:0;
+    display:flex;align-items:center;justify-content:center;
+    transition:color .15s,opacity .2s;
+  }
+  .back-btn:hover{color:#374151}
+  .back-btn.locked{opacity:0;pointer-events:none;visibility:hidden}
+
+  /* ===== SHINY BANNER ===== */
+  .shiny-banner{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;z-index:11;
+    background:radial-gradient(ellipse at center,rgba(255,255,255,.97) 0%,rgba(254,240,138,.92) 100%);
+    opacity:0;pointer-events:none;transition:opacity .4s;
+  }
+  .shiny-banner.visible{opacity:1;pointer-events:auto}
+  .shiny-banner h3{font-size:.5rem;color:#b45309;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;font-family:'Press Start 2P',monospace}
+  .shiny-banner .shiny-stars{font-size:1.5rem;animation:sparkle 1s ease-in-out infinite}
+  .shiny-banner .shiny-sprite{width:110px;height:110px;image-rendering:pixelated;animation:evo-bounce 1s ease-out both;filter:drop-shadow(0 0 20px rgba(250,204,21,.8))}
+  .shiny-banner .shiny-name{font-size:.55rem;font-weight:800;color:#b45309;animation:evo-name-pop .6s ease-out both;text-transform:capitalize;font-family:'Press Start 2P',monospace}
+  .shiny-banner .shiny-dismiss{margin-top:6px;font-size:.35rem;color:#9ca3af;animation:fade-in 1s 1.5s both;font-family:'Press Start 2P',monospace}
+
+  /* ===== COMPLETION BANNER ===== */
+  .complete-banner{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;z-index:12;
+    background:radial-gradient(ellipse at center,rgba(255,255,255,.97) 0%,rgba(209,250,229,.95) 100%);
+    opacity:0;pointer-events:none;transition:opacity .4s;
+  }
+  .complete-banner.visible{opacity:1;pointer-events:auto}
+  .complete-banner h3{font-size:.65rem;color:var(--dark-gray);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-family:'Press Start 2P',monospace}
+  .complete-banner .complete-sprite{width:100px;height:100px;image-rendering:pixelated;filter:drop-shadow(0 0 12px rgba(34,197,94,.5));animation:evo-bounce .8s ease-out both}
+  .complete-banner .complete-name{font-size:.75rem;font-weight:800;color:#6AB1B1;margin-top:6px;text-transform:capitalize;font-family:'Press Start 2P',monospace}
+  .complete-banner .complete-sub{font-size:.4rem;color:#6b7280;margin:10px 0 14px;line-height:1.6;font-family:'Roboto Mono',monospace;font-weight:500}
+  .complete-banner .btn-next{
+    box-sizing:border-box;
+    display:flex;flex-direction:row;justify-content:center;align-items:center;
+    padding:7px 17px 6px 18px;gap:10px;
+    min-height:30px;
+    background:#6AB1B1;border:.7px solid #7B949C;
+    box-shadow:1px 1px 3px rgba(0,0,0,.25);border-radius:20px;
+    font-family:'Roboto Mono',monospace;font-style:normal;font-weight:700;
+    font-size:8px;line-height:9px;letter-spacing:.1em;
+    color:#fff;cursor:pointer;
+    transition:background .15s,box-shadow .15s,transform .1s;
+    animation:cta-pulse 3s ease-in-out infinite;
+  }
+  .complete-banner .btn-next:hover{
+    background:#5a9e9e;
+    box-shadow:1px 2px 6px rgba(0,0,0,.3);
+    animation:none;
+  }
+  .complete-banner .btn-next:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(0,0,0,.2);animation:none}
+  @keyframes cta-pulse{
+    0%,100%{transform:scale(1);box-shadow:1px 1px 3px rgba(0,0,0,.25),0 0 0 0 rgba(106,177,177,.4)}
+    50%{transform:scale(1.02);box-shadow:1px 1px 3px rgba(0,0,0,.25),0 0 0 5px rgba(106,177,177,0)}
+  }
+
+  /* ===== TOAST ===== */
+  .toast{
+    position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    background:var(--green);color:#fff;padding:4px 12px;border-radius:99px;
+    font-size:.4rem;font-weight:700;z-index:5;white-space:nowrap;
+    animation:toast-pop 2.5s ease-out both;pointer-events:none;font-family:'Press Start 2P',monospace;
+  }
+  .toast.shiny-toast{background:linear-gradient(90deg,#f59e0b,#eab308)}
+  @keyframes toast-pop{
+    0%{opacity:0;transform:translateX(-50%) translateY(-8px)}
+    15%{opacity:1;transform:translateX(-50%) translateY(0)}
+    80%{opacity:1}
+    100%{opacity:0;transform:translateX(-50%) translateY(-6px)}
+  }
+
+  /* ===== STARTER SELECTION ===== */
+  #viewSelect{
+    background:linear-gradient(160deg,#d4f0f0 0%,#e8faf6 100%);
+    border-radius:2px;
+  }
+  .starter-header{
+    text-align:center;flex-shrink:0;width:100%;
+    padding-bottom:10px;
+    border-bottom:1px solid rgba(148,181,181,0.25);
+  }
+  .starter-header h2{
+    font-size:clamp(7px,2.2vw,11px);color:var(--dark-gray);
+    margin-bottom:5px;line-height:1.7;font-family:'Press Start 2P',monospace;
+    letter-spacing:.05em;
+  }
+  .starter-header .subtitle{
+    font-size:clamp(8px,2vw,11px);color:#5a8a8a;
+    line-height:1.4;font-family:'Roboto Mono',monospace;font-weight:500;
+  }
+  /* Flexbox container — cards wrap and stay center-aligned on every row */
+  .starter-options{
+    display:flex;flex-wrap:wrap;
+    justify-content:center;align-content:center;align-items:stretch;
+    gap:10px;width:100%;margin:auto 0;
+  }
+  .starter-card{
+    cursor:pointer;
+    flex:1 1 75px;max-width:120px;    /* 3 per row in ~280px container → 2 rows for 5 cards */
+    padding:clamp(6px,2vw,12px) clamp(4px,1.5vw,8px);
+    border-radius:10px;border:2px solid #b5dede;
+    background:#fff;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
+    transition:border-color .2s,transform .2s,box-shadow .2s;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:clamp(3px,1vw,6px);
+  }
+  .starter-card:hover{
+    border-color:var(--blue);
+    transform:translateY(-3px);
+    box-shadow:0 6px 16px rgba(59,130,246,.25);
+  }
+  .starter-card img{
+    width:clamp(40px,10vw,64px);height:clamp(40px,10vw,64px);
+    image-rendering:pixelated;display:block;
+  }
+  .starter-card .name{
+    font-size:clamp(5px,1.6vw,8px);
+    font-weight:700;color:var(--dark-gray);
+    text-transform:capitalize;text-align:center;
+    line-height:1.5;font-family:'Press Start 2P',monospace;
+  }
+  .starter-card.loading{opacity:.5;pointer-events:none}
+  .starter-card.loading img{visibility:hidden}
+  .starter-card.loading .name::after{content:'...'}
+  .starter-card.legendary{
+    border:2px solid transparent;
+    background:linear-gradient(#fff,#fff) padding-box,
+      linear-gradient(135deg,#f59e0b,#ec4899,#8b5cf6,#3b82f6,#f59e0b) border-box;
+    background-size:100% 100%,300% 300%;
+    animation:holo-shift 3s ease infinite;position:relative;overflow:hidden;
+  }
+  .starter-card.legendary::before{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.4) 45%,transparent 60%);
+    background-size:200% 100%;animation:holo-shine 2.5s ease-in-out infinite;
+    pointer-events:none;border-radius:6px;
+  }
+  .starter-card.legendary:hover{
+    transform:translateY(-3px);
+    box-shadow:0 6px 20px rgba(139,92,246,.4),0 0 15px rgba(236,72,153,.2);
+  }
+  .starter-card.legendary .rarity-badge{
+    display:block;font-size:.25rem;font-weight:800;color:#7c3aed;
+    text-transform:uppercase;letter-spacing:1px;margin-top:1px;line-height:1.3;font-family:'Press Start 2P',monospace;
+  }
+  @keyframes holo-shift{0%,100%{background-position:0 0,0% 50%}50%{background-position:0 0,100% 50%}}
+  @keyframes holo-shine{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  /* ===== POKEDEX GALLERY ===== */
+  .pokedex-view{overflow-y:auto !important}
+  .pokedex-view h2{font-size:.65rem;color:var(--dark-gray);margin-bottom:6px;font-family:'Press Start 2P',monospace}
+  .pokedex-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:100%;overflow-y:auto;padding:4px 2px}
+  .pokedex-grid::-webkit-scrollbar{width:3px}
+  .pokedex-grid::-webkit-scrollbar-thumb{background:#b5dede;border-radius:99px}
+  .dex-entry{background:#fff;border-radius:10px;padding:4px 4px 5px;text-align:center;border:2px solid #c8e4e4;position:relative;width:75px;height:110px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
+  .dex-entry.shiny{border-color:var(--accent);background:linear-gradient(180deg,#fffbeb,#fff)}
+  .dex-entry.legendary{border-color:#8b5cf6;background:linear-gradient(180deg,#f5f3ff,#fff)}
+  .dex-entry.legendary.shiny{border-image:linear-gradient(135deg,#f59e0b,#8b5cf6) 1}
+  .dex-entry .dex-legendary-badge{position:absolute;top:2px;left:4px;font-size:.5rem}
+  .dex-entry img{width:72px;height:72px;image-rendering:pixelated;display:block;object-fit:contain}
+  .dex-entry .dex-name{font-size:1rem;font-weight:700;color:var(--dark-gray);text-transform:capitalize;font-family:'Roboto Mono',monospace;text-align:center;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+  .dex-entry .dex-shiny-badge{position:absolute;top:2px;right:4px;font-size:.55rem}
+  .dex-empty{width:100%;text-align:center;padding:20px 8px;color:#7B949C;font-size:.75rem;line-height:1.15;font-family:'Roboto Mono',monospace;font-weight:500}
+  .btn-back{margin-top:6px;background:none;border:none;color:#6b7280;font-size:.4rem;cursor:pointer;text-decoration:underline;font-family:'Roboto Mono',monospace}
+  .btn-back:hover{color:var(--dark-gray)}
+
+  /* ===== SETTINGS OVERLAY ===== */
+  .settings-overlay{
+    position:fixed;inset:0;z-index:50;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(15,23,42,.45);
+    opacity:0;pointer-events:none;
+    transition:opacity .2s;
+  }
+  .settings-overlay.open{opacity:1;pointer-events:auto}
+  .settings-panel{
+    display:flex;flex-direction:column;gap:12px;
+    padding:14px 16px;border-radius:14px;
+    width:min(260px,88vw);
+    background:linear-gradient(160deg,#d4f0f0 0%,#e8faf6 100%);
+    border:1px solid #c8e4e4;
+    box-shadow:0 8px 32px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.7);
+    transform:translateY(6px);transition:transform .2s;
+  }
+  .settings-overlay.open .settings-panel{transform:translateY(0)}
+  .settings-panel-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:10px;border-bottom:1px solid rgba(148,181,181,.25);
+  }
+  .settings-panel-header h3{
+    font-family:'Press Start 2P',monospace;font-size:8px;
+    color:#374151;text-transform:uppercase;letter-spacing:.08em;
+  }
+  .settings-close{
+    background:none;border:none;cursor:pointer;
+    font-size:11px;color:#9ab5b5;line-height:1;
+    transition:color .15s;padding:2px 4px;
+  }
+  .settings-close:hover{color:#374151}
+  /* shared row layout */
+  .s-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .s-label{
+    font-family:'Roboto Mono',monospace;font-size:9px;font-weight:500;
+    color:#7B949C;text-transform:uppercase;letter-spacing:.1em;flex-shrink:0;
+  }
+  .s-divider{width:100%;height:1px;background:rgba(148,181,181,.18)}
+  /* number inputs */
+  .s-num-wrap{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .s-num-sub{
+    font-family:'Roboto Mono',monospace;font-size:7px;font-weight:500;
+    color:#9ab5b5;text-transform:uppercase;letter-spacing:.08em;
+  }
+  .s-num{
+    width:44px;text-align:center;border-radius:8px;
+    border:1px solid #c8e4e4;outline:none;overflow:visible;
+    font-family:'Roboto Mono',monospace;font-size:.85rem;font-weight:500;color:#374151;
+    padding:5px 4px;background:#fff;
+    box-shadow:inset 2px 2px 4px rgba(0,0,0,.09),inset 0 -2px 3px rgba(255,255,255,.6);
+    transition:border-color .15s;
+  }
+  .s-num:focus{border-color:#6AB1B1}
+  /* toggle */
+  .s-toggle{
+    position:relative;width:42px;height:22px;border-radius:20px;
+    border:1px solid #b5dede;cursor:pointer;
+    background:#C7EAEA;
+    box-shadow:inset 1px 1px 3px rgba(0,0,0,.12),inset 0 -1px 2px rgba(255,255,255,.5);
+    transition:background .2s;
+  }
+  .s-toggle.on{background:#6AB1B1}
+  .s-toggle-thumb{
+    position:absolute;top:2px;left:2px;
+    width:16px;height:16px;border-radius:50%;
+    background:#fff;border:1px solid #c8e4e4;
+    box-shadow:1px 1px 3px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.9);
+    transition:left .2s;
+  }
+  .s-toggle.on .s-toggle-thumb{left:22px}
+  /* range */
+  .s-range-wrap{flex:1;display:flex;align-items:center;gap:6px}
+  .s-range-track{
+    position:relative;flex:1;height:10px;border-radius:20px;
+    background:#C7EAEA;border:1px solid #b5dede;
+    box-shadow:inset 1px 1px 3px rgba(0,0,0,.12),inset 0 -1px 2px rgba(255,255,255,.5);
+    overflow:hidden;
+  }
+  .s-range-fill{height:100%;background:#6AB1B1;border-radius:inherit;pointer-events:none}
+  .s-range-input{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer;height:100%}
+  .s-range-val{
+    font-family:'Roboto Mono',monospace;font-size:9px;font-weight:500;
+    color:#7B949C;min-width:22px;text-align:right;
+  }
+  /* select */
+  .s-select-wrap{position:relative}
+  .s-select{
+    appearance:none;border-radius:10px;padding:5px 26px 5px 10px;
+    border:1px solid #c8e4e4;outline:none;cursor:pointer;
+    font-family:'Roboto Mono',monospace;font-size:9px;font-weight:500;
+    color:#374151;background:#fff;letter-spacing:.06em;
+    box-shadow:inset 3px 3px 4px rgba(255,255,255,.55),inset 0 -3px 4px rgba(0,0,0,.18);
+    transition:border-color .15s;
+  }
+  .s-select:focus{border-color:#6AB1B1}
+  .s-select-arrow{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    pointer-events:none;color:#7B949C;font-size:8px;
+  }
+  .s-apply-btn{
+    width:100%;border-radius:12px;border:1px solid #7B949C;
+    background:#6AB1B1;color:#fff;cursor:pointer;
+    font-family:'Roboto Mono',monospace;font-size:.8rem;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;
+    padding:6px 12px;
+    box-shadow:inset 3px 3px 5px rgba(255,255,255,.28),inset 0 -3px 5px rgba(0,0,0,.20),0 2px 6px rgba(0,0,0,.10);
+    transition:background .15s,transform .1s;
+  }
+  .s-apply-btn:hover{background:#5a9e9e}
+  .s-apply-btn:active{transform:translateY(1px)}
+
+  /* ===== DEV PANEL ===== */
+  .dev-toggle{
+    position:absolute;bottom:4%;right:3%;z-index:3;
+    width:18px;height:18px;border-radius:50%;
+    border:1.5px solid rgba(148,181,181,0.5);
+    background:rgba(181,222,222,0.3);color:var(--btn-text);font-size:.5rem;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:all .15s;opacity:0.5;
+  }
+  .dev-toggle:hover{opacity:1;background:rgba(181,222,222,0.6)}
+  .dev-panel{
+    display:none;position:absolute;bottom:10%;right:3%;z-index:4;
+    background:#1e293b;border:2px solid #334155;border-radius:8px;
+    padding:8px;min-width:150px;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  .dev-panel.open{display:block}
+  .dev-panel h4{font-size:.4rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-family:'Press Start 2P',monospace}
+  .dev-btn{
+    display:block;width:100%;border:none;border-radius:5px;padding:5px 8px;
+    font-size:.4rem;font-weight:600;cursor:pointer;margin-bottom:3px;text-align:left;
+    transition:all .1s;font-family:'Roboto Mono',monospace;
+  }
+  .dev-btn:last-child{margin-bottom:0}
+  .dev-btn.quick{background:#3b82f6;color:#fff}
+  .dev-btn.quick:hover{background:#2563eb}
+  .dev-btn.shiny-test{background:#f59e0b;color:#fff}
+  .dev-btn.shiny-test:hover{background:#d97706}
+  .dev-btn.skip-final{background:#8b5cf6;color:#fff}
+  .dev-btn.skip-final:hover{background:#7c3aed}
+  .dev-btn.legendary-test{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff}
+  .dev-btn.legendary-test:hover{background:linear-gradient(135deg,#7c3aed,#db2777)}
+  .dev-btn.clear{background:#ef4444;color:#fff}
+  .dev-btn.clear:hover{background:#dc2626}
+
+  /* ===== RESPONSIVE ===== */
+  @media(max-width:350px){
+    .view.active{padding:4% 5%}
+    .main-status-group{gap:0}
+    .mode-toggle{margin-bottom:2px}
+    .nav-bar{height:8%}
+    .settings-btn{gap:4px}
+    .starter-options{gap:6px}
+  }
+  /* Mobile: floating card */
+  @media(max-width:640px){
+    .shell{
+      width:90%;max-width:360px;
+      aspect-ratio:unset;height:540px;max-height:540px;
+      border-radius:20px;
+      padding:0;
+    }
+    .back-btn{top:16px;left:16px}
+    .view.active{padding:4% 5%}
+    .pokedex-view{overflow-y:auto !important;max-height:300px}
+    .pokedex-grid{padding-bottom:20px}
+    .main-status-group{gap:0}
+    .mode-toggle button{font-size:0.7rem}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="panel">
+    <!-- Screen -->
+    <div class="screen" id="screen">
+
+      <!-- Selection View -->
+      <div class="view" id="viewSelect">
+        <div class="starter-header">
+          <h2 id="selectTitle">Choose Your Starter!</h2>
+          <div class="subtitle" id="selectSubtitle">Begin your focus journey</div>
+        </div>
+        <div class="starter-options" id="starterOptions"></div>
+      </div>
+
+      <!-- Timer View -->
+      <div class="view" id="viewTimer">
+        <button class="back-btn locked" id="backBtn" onclick="handleBackBtn()" title="Back to selection">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/>
+          </svg>
+        </button>
+        <div class="mode-toggle">
+          <button class="active" data-mode="focus" onclick="switchMode('focus')">Focus</button>
+          <button data-mode="break" onclick="switchMode('break')">Break</button>
+        </div>
+        <div class="main-status-group">
+          <div class="sprite-container" id="spriteContainer">
+            <img id="pokeSprite" src="" alt="Pokemon">
+            <span class="shiny-badge" id="shinyBadge" style="display:none">&#10024;</span>
+          </div>
+          <div class="poke-name" id="pokeName"></div>
+          <div class="poke-stage" id="pokeStage"></div>
+          <div class="timer-display" id="timerDisplay">25:00</div>
+          <div class="timer-label" id="timerLabel">Focus Time</div>
+        </div>
+        <div class="xp-section">
+          <div class="xp-label"><span>XP</span><span id="xpText">0 / 2</span></div>
+          <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+          <div class="sessions-count" id="sessionsCount">0 sessions completed</div>
+        </div>
+      </div>
+
+      <!-- Pokedex View -->
+      <div class="view pokedex-view" id="viewPokedex">
+        <h2>Pokedex</h2>
+        <div class="pokedex-grid" id="pokedexGrid"></div>
+      </div>
+
+      <!-- Evolution text overlay -->
+      <div class="evo-text-overlay" id="evoOverlay" onclick="dismissEvoOverlay()">
+        <div class="evo-msg" id="evoMsg1"></div>
+        <img class="evo-new-sprite" id="evoNewSprite" src="" alt="">
+        <div class="evo-msg-big" id="evoMsg2"></div>
+        <div class="evo-msg-sub">Click to continue</div>
+      </div>
+
+      <!-- Shiny Banner -->
+      <div class="shiny-banner" id="shinyBanner" onclick="dismissShiny()">
+        <div class="shiny-stars">&#10024;&#10024;&#10024;</div>
+        <h3>Shiny Pokemon!</h3>
+        <img class="shiny-sprite" id="shinySprite" src="" alt="">
+        <div class="shiny-name" id="shinyName"></div>
+        <div class="shiny-dismiss">Click to continue</div>
+      </div>
+
+      <!-- Completion Banner -->
+      <div class="complete-banner" id="completeBanner">
+        <h3 id="completeTitle">Evolution Complete!</h3>
+        <img class="complete-sprite" id="completeSprite" src="" alt="">
+        <div class="complete-name" id="completeName"></div>
+        <div class="complete-sub" id="completeSub"></div>
+        <button class="btn-next" onclick="startNextRound()">&#10022; CATCH NEXT POKEMON</button>
+      </div>
+
+    </div>
+
+    <!-- Navigation Bar -->
+    <div class="nav-bar">
+      <button class="nav-btn" id="navStart" onclick="navStartClick()">START</button>
+      <button class="nav-btn" id="navPokedex" onclick="showPokedex()">POKEDEX</button>
+      <button class="nav-btn" id="navReset" onclick="resetTimer()">RESET</button>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <button class="settings-btn">
+    <span class="settings-circle"></span>
+    <span class="settings-label">SETTINGS</span>
+  </button>
+
+  <!-- Dev Toggle -->
+  <button class="dev-toggle" onclick="toggleDevPanel()" title="Dev Tools">&#9881;</button>
+
+  <!-- Dev Panel -->
+  <div class="dev-panel" id="devPanel">
+    <h4>Dev Tools</h4>
+    <button class="dev-btn quick" onclick="devQuickFinish()">&#9889; Quick Finish (3s)</button>
+    <button class="dev-btn shiny-test" onclick="devForceShiny()">&#10024; Force Shiny</button>
+    <button class="dev-btn skip-final" onclick="devSkipToFinal()">&#9193; Skip to Final</button>
+    <button class="dev-btn legendary-test" onclick="devForceLegendary()">&#128081; Force Legendary</button>
+    <button class="dev-btn clear" onclick="devClearData()">&#128465; Clear All Data</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+// ── Parent settings state (callback pattern source of truth) ──
+let settings = { focusTime: 25, breakTime: 5, sfxVolume: 70 };
+function getDuration(mode) {
+  return (mode === 'focus' ? settings.focusTime : settings.breakTime) * 60;
+}
+// Keep legacy names so existing references below still resolve
+const FOCUS_DURATION = 25 * 60;
+const BREAK_DURATION = 5 * 60;
+const SHINY_CHANCE   = 0.01;
+const MASTERY_SESSIONS = 5;
+const LEGENDARY_CHANCE = 0.05;
+const CLASSIC_STARTERS = [1, 4, 7];
+const DEFAULT_TITLE  = 'PokeDoro';
+const SPRITE_BASE    = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
+
+const LEGENDARY_IDS = [
+  144,145,146,150,151,
+  243,244,245,249,250,251,
+  377,378,379,380,381,382,383,384,385,386,
+  480,481,482,483,484,485,486,487,488,489,490,491,492,493,
+  494,638,639,640,641,642,643,644,645,646,647,648,649
+];
+
+function getThresholds(chainLength) {
+  if (chainLength >= 3) return [0, 2, 5];
+  if (chainLength === 2) return [0, 3];
+  return [0];
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  isFirstRun: true,
+  activePokemon: null,
+  pokedex: [],
+  currentMode: 'focus',
+  timeLeft: getDuration('focus'),
+  running: false
+};
+
+let timerInterval = null;
+let evolving = false;
+let forceShinyNext = false;
+
+// ============================================================
+// HELPERS
+// ============================================================
+function spriteUrl(id, shiny) {
+  return shiny ? `${SPRITE_BASE}/shiny/${id}.png` : `${SPRITE_BASE}/${id}.png`;
+}
+function capitalize(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// ============================================================
+// POKEAPI
+// ============================================================
+async function fetchPokemonBasic(id) {
+  const r = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+  const d = await r.json();
+  return { id: d.id, name: d.name };
+}
+
+async function fetchEvolutionChain(pokemonId) {
+  const specRes = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`);
+  const specData = await specRes.json();
+  const chainRes = await fetch(specData.evolution_chain.url);
+  const chainData = await chainRes.json();
+  const stages = [];
+  let node = chainData.chain;
+  while (node) {
+    const pr = await fetch(`https://pokeapi.co/api/v2/pokemon/${node.species.name}`);
+    const pd = await pr.json();
+    stages.push({ id: pd.id, name: pd.name });
+    node = node.evolves_to && node.evolves_to[0] ? node.evolves_to[0] : null;
+  }
+  const chainLength = stages.length;
+  while (stages.length < 3) stages.push({ ...stages[stages.length - 1] });
+  return { stages, chainLength: Math.min(chainLength, 3) };
+}
+
+let forceLegendaryNext = false;
+
+async function fetchRandomBasePokemon(count) {
+  const maxId = 649;
+  const results = [];
+  const usedIds = new Set();
+  const legendarySlots = new Set();
+  if (forceLegendaryNext) {
+    legendarySlots.add(Math.floor(Math.random() * count));
+    forceLegendaryNext = false;
+  }
+  for (let i = 0; i < count; i++) {
+    if (!legendarySlots.has(i) && Math.random() < LEGENDARY_CHANCE) legendarySlots.add(i);
+  }
+  for (let i = 0; i < count; i++) {
+    if (legendarySlots.has(i)) {
+      const poke = await fetchRandomLegendary(usedIds);
+      if (poke) { results.push(poke); usedIds.add(poke.id); continue; }
+    }
+    const poke = await fetchRandomCommon(usedIds, maxId);
+    if (poke) { results.push(poke); usedIds.add(poke.id); }
+  }
+  return results;
+}
+
+async function fetchRandomLegendary(usedIds) {
+  const shuffled = [...LEGENDARY_IDS].sort(() => Math.random() - .5);
+  for (const id of shuffled) {
+    if (usedIds.has(id)) continue;
+    try {
+      const pr = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+      if (!pr.ok) continue;
+      const pd = await pr.json();
+      if (!pd.sprites.front_default) continue;
+      return { id: pd.id, name: pd.name, isLegendary: true };
+    } catch (e) { continue; }
+  }
+  return null;
+}
+
+async function fetchRandomCommon(usedIds, maxId) {
+  const tried = new Set();
+  while (tried.size < 80) {
+    const id = Math.floor(Math.random() * maxId) + 1;
+    if (tried.has(id) || usedIds.has(id) || LEGENDARY_IDS.includes(id)) { tried.add(id); continue; }
+    tried.add(id);
+    try {
+      const sr = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
+      if (!sr.ok) continue;
+      const sd = await sr.json();
+      if (sd.evolves_from_species !== null) continue;
+      if (sd.is_legendary || sd.is_mythical) continue;
+      const pr = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+      if (!pr.ok) continue;
+      const pd = await pr.json();
+      if (!pd.sprites.front_default) continue;
+      return { id: pd.id, name: pd.name, isLegendary: false };
+    } catch (e) { continue; }
+  }
+  return null;
+}
+
+// ============================================================
+// LOCALSTORAGE
+// ============================================================
+function saveState() {
+  localStorage.setItem('pokedoro', JSON.stringify({
+    isFirstRun: state.isFirstRun,
+    activePokemon: state.activePokemon,
+    pokedex: state.pokedex
+  }));
+  localStorage.setItem('pokedoro_settings', JSON.stringify(settings));
+}
+
+function loadState() {
+  try {
+    const savedSettings = JSON.parse(localStorage.getItem('pokedoro_settings'));
+    if (savedSettings) {
+      settings.focusTime = savedSettings.focusTime ?? settings.focusTime;
+      settings.breakTime = savedSettings.breakTime ?? settings.breakTime;
+      settings.sfxVolume = savedSettings.sfxVolume ?? settings.sfxVolume;
+    }
+  } catch (e) {}
+  try {
+    const s = JSON.parse(localStorage.getItem('pokedoro'));
+    if (!s) return false;
+    state.isFirstRun = s.isFirstRun !== undefined ? s.isFirstRun : true;
+    state.activePokemon = s.activePokemon || null;
+    state.pokedex = s.pokedex || [];
+    if (state.activePokemon) {
+      if (!state.activePokemon.chainLength) state.activePokemon.chainLength = 3;
+      if (state.activePokemon.isLegendary === undefined) state.activePokemon.isLegendary = false;
+    }
+    return state.activePokemon !== null;
+  } catch (e) { return false; }
+}
+
+// ============================================================
+// AUDIO
+// ============================================================
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playChime() {
+  try {
+    const c = getAudioCtx();
+    [523.25,659.25,783.99,1046.50].forEach((f,i) => {
+      const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(.15,c.currentTime+i*.15);
+      g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.15+.4);
+      o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.4);
+    });
+  } catch(e){}
+}
+function playEvolutionSound() {
+  try {
+    const c = getAudioCtx();
+    [392,440,523.25,587.33,659.25,783.99,880,1046.50].forEach((f,i) => {
+      const o=c.createOscillator(),g=c.createGain();o.type=i<4?'sine':'triangle';o.frequency.value=f;
+      g.gain.setValueAtTime(.12,c.currentTime+i*.12);
+      g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.12+.5);
+      o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.5);
+    });
+  } catch(e){}
+}
+function playShinySound() {
+  try {
+    const c = getAudioCtx();
+    [1046.50,1318.51,1567.98,1318.51,1567.98,2093.00].forEach((f,i) => {
+      const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(.1,c.currentTime+i*.08);
+      g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.08+.3);
+      o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.08);o.stop(c.currentTime+i*.08+.3);
+    });
+  } catch(e){}
+}
+
+// ============================================================
+// VIEW MANAGEMENT
+// ============================================================
+function showView(viewId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+  updateNavHighlight(viewId);
+}
+
+function updateNavHighlight(viewId) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active', 'disabled'));
+  if (viewId === 'viewTimer') {
+    document.getElementById('navStart').classList.add('active');
+    // Disable RESET while a session is actively running
+    if (state.running) document.getElementById('navReset').classList.add('disabled');
+  } else if (viewId === 'viewSelect') {
+    document.getElementById('navStart').classList.add('active');
+    document.getElementById('navReset').classList.add('disabled');
+  } else if (viewId === 'viewPokedex') {
+    document.getElementById('navPokedex').classList.add('active');
+    document.getElementById('navReset').classList.add('disabled');
+  }
+}
+
+const NAV_ICON_PLAY  = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+const NAV_ICON_PAUSE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+
+function showStartPauseButtons(showStart) {
+  const navStart = document.getElementById('navStart');
+  if (state.activePokemon) {
+    navStart.innerHTML = showStart
+      ? `${NAV_ICON_PLAY}START`
+      : `${NAV_ICON_PAUSE}PAUSE`;
+  }
+}
+
+// ============================================================
+// BACK BUTTON
+// ============================================================
+function updateBackButton() {
+  const btn = document.getElementById('backBtn');
+  if (!btn) return;
+  const ap = state.activePokemon;
+  // Lock once the first session is completed
+  const locked = !ap || ap.completedSessions > 0;
+  btn.classList.toggle('locked', locked);
+}
+
+function handleBackBtn() {
+  const ap = state.activePokemon;
+  if (!ap || ap.completedSessions > 0) return; // locked — do nothing
+  // Preserve activePokemon in state; just navigate back to selection
+  if (state.running) pauseTimer();
+  showSelectionScreen();
+}
+
+// ============================================================
+// NAV BUTTON HANDLERS
+// ============================================================
+function navStartClick() {
+  const currentView = document.querySelector('.view.active');
+  if (currentView && currentView.id === 'viewPokedex') {
+    hidePokedex();
+    return;
+  }
+  if (!state.activePokemon) return;
+  if (currentView && currentView.id !== 'viewTimer') {
+    showView('viewTimer');
+    updateTimerUI();
+    return;
+  }
+  if (state.running) {
+    pauseTimer();
+  } else {
+    startTimer();
+  }
+}
+
+// ============================================================
+// TIMER UI
+// ============================================================
+function getAPThresholds() {
+  const ap = state.activePokemon;
+  return getThresholds(ap.chainLength);
+}
+
+function getStageForSessions(sessions, thresholds) {
+  for (let i = thresholds.length - 1; i >= 0; i--) {
+    if (sessions >= thresholds[i]) return i + 1;
+  }
+  return 1;
+}
+
+function updateTimerUI() {
+  const ap = state.activePokemon;
+  if (!ap) return;
+
+  const thresholds = getAPThresholds();
+  const stageIdx = ap.currentStage - 1;
+  const poke = ap.evolutionChain[stageIdx];
+
+  document.getElementById('pokeSprite').src = spriteUrl(poke.id, ap.isShiny);
+  document.getElementById('pokeName').textContent = capitalize(poke.name);
+  document.getElementById('shinyBadge').style.display = ap.isShiny ? '' : 'none';
+
+  if (ap.chainLength === 1) {
+    const mastered = ap.completedSessions >= MASTERY_SESSIONS;
+    if (ap.isLegendary) {
+      document.getElementById('pokeStage').textContent = mastered ? '\u2B50 Legendary Caught' : '\u2605 Legendary';
+    } else {
+      document.getElementById('pokeStage').textContent = mastered ? '\u2B50 Mastered' : 'Solo Pokemon';
+    }
+  } else {
+    const isFinal = stageIdx >= ap.chainLength - 1;
+    document.getElementById('pokeStage').textContent = isFinal ? '\u2B50 Final Form' : `Stage ${stageIdx + 1}`;
+  }
+
+  const spriteC = document.getElementById('spriteContainer');
+  spriteC.classList.toggle('shiny-active', ap.isShiny);
+  spriteC.querySelectorAll('.shiny-particle-extra').forEach(el => el.remove());
+  if (ap.isShiny) {
+    [{top:'50%',left:'-2px',delay:'.5s'},{top:'20%',right:'0',delay:'1.5s'}].forEach(p => {
+      const sp = document.createElement('span');
+      sp.className = 'shiny-particle-extra';
+      sp.textContent = '\u2728';
+      sp.style.animationDelay = p.delay;
+      if (p.top) sp.style.top = p.top;
+      if (p.left) sp.style.left = p.left;
+      if (p.right) sp.style.right = p.right;
+      spriteC.appendChild(sp);
+    });
+  }
+
+  updateTimerDisplay();
+  updateXPBar();
+  updateModeToggles();
+  updateBackButton();
+  document.getElementById('sessionsCount').textContent =
+    `${ap.completedSessions} session${ap.completedSessions !== 1 ? 's' : ''} completed`;
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(state.timeLeft / 60);
+  const s = state.timeLeft % 60;
+  const t = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('timerDisplay').textContent = t;
+  document.getElementById('timerLabel').textContent =
+    state.currentMode === 'focus' ? 'Focus Time' : 'Break Time';
+  document.title = state.running
+    ? `${t} ${state.currentMode === 'focus' ? '\uD83D\uDD25' : '\u2615'} ${DEFAULT_TITLE}`
+    : DEFAULT_TITLE;
+}
+
+function updateXPBar() {
+  const ap = state.activePokemon;
+  const thresholds = getAPThresholds();
+  const stageIdx = ap.currentStage - 1;
+  const isMaxStage = stageIdx >= thresholds.length - 1;
+  const isComplete = ap.completedSessions >= MASTERY_SESSIONS;
+
+  let pct, labelText;
+  if (isComplete) {
+    pct = 100;
+    labelText = ap.chainLength === 1 ? 'MASTERED' : 'MAX';
+  } else if (isMaxStage) {
+    const prev = thresholds[stageIdx];
+    pct = ((ap.completedSessions - prev) / (MASTERY_SESSIONS - prev)) * 100;
+    labelText = `${ap.completedSessions - prev} / ${MASTERY_SESSIONS - prev}`;
+  } else {
+    const prev = thresholds[stageIdx];
+    const next = thresholds[stageIdx + 1];
+    pct = ((ap.completedSessions - prev) / (next - prev)) * 100;
+    labelText = `${ap.completedSessions - prev} / ${next - prev}`;
+  }
+
+  const fill = document.getElementById('xpFill');
+  fill.style.width = Math.min(pct, 100) + '%';
+  fill.className = 'xp-fill' + (isComplete ? ' maxed' : '');
+  document.getElementById('xpText').textContent = labelText;
+}
+
+function updateModeToggles() {
+  document.querySelectorAll('.mode-toggle button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === state.currentMode);
+  });
+}
+function updateDexBadge() {
+  // No badge element in new design — no-op for compatibility
+}
+function showToast(msg, isShiny) {
+  const old = document.querySelector('.toast'); if (old) old.remove();
+  const t = document.createElement('div');
+  t.className = 'toast' + (isShiny ? ' shiny-toast' : '');
+  t.textContent = msg;
+  document.getElementById('screen').appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+// ============================================================
+// TIMER LOGIC
+// ============================================================
+function startTimer() {
+  if (state.running || evolving) return;
+  state.running = true;
+  document.getElementById('screen').classList.add('running');
+  document.getElementById('navReset').classList.add('disabled');
+  showStartPauseButtons(false);
+  timerInterval = setInterval(() => {
+    state.timeLeft--;
+    updateTimerDisplay();
+    if (state.timeLeft <= 0) {
+      clearInterval(timerInterval); timerInterval = null;
+      state.running = false;
+      document.getElementById('screen').classList.remove('running');
+      onTimerComplete();
+    }
+  }, 1000);
+}
+function pauseTimer() {
+  if (!state.running) return;
+  state.running = false;
+  clearInterval(timerInterval); timerInterval = null;
+  document.getElementById('screen').classList.remove('running');
+  // Re-enable RESET now that the timer is paused (only in timer view)
+  const cv = document.querySelector('.view.active');
+  if (cv && cv.id === 'viewTimer') document.getElementById('navReset').classList.remove('disabled');
+  showStartPauseButtons(true);
+  document.title = DEFAULT_TITLE;
+}
+function resetTimer() {
+  const currentView = document.querySelector('.view.active');
+  if (currentView && currentView.id !== 'viewTimer' && state.activePokemon) {
+    showView('viewTimer');
+    updateTimerUI();
+  }
+  pauseTimer();
+  state.timeLeft = getDuration(state.currentMode);
+  updateTimerDisplay();
+}
+function switchMode(mode) {
+  if (state.running) pauseTimer();
+  state.currentMode = mode;
+  state.timeLeft = getDuration(mode);
+  updateTimerUI();
+}
+
+// ============================================================
+// SESSION COMPLETION
+// ============================================================
+function onTimerComplete() {
+  if (state.currentMode === 'focus') {
+    const ap = state.activePokemon;
+    const thresholds = getAPThresholds();
+    const prevStage = ap.currentStage;
+
+    ap.completedSessions++;
+    ap.currentStage = getStageForSessions(ap.completedSessions, thresholds);
+    saveState();
+
+    let gotShiny = false;
+    if (!ap.isShiny && (forceShinyNext || Math.random() < SHINY_CHANCE)) {
+      ap.isShiny = true; gotShiny = true; forceShinyNext = false; saveState();
+    }
+
+    const evolved = ap.currentStage > prevStage && ap.chainLength > 1;
+    const isComplete = ap.completedSessions >= MASTERY_SESSIONS;
+
+    if (evolved) {
+      runCinematicEvolution(prevStage, ap.currentStage, gotShiny, isComplete);
+    } else if (gotShiny) {
+      triggerShinyReveal(() => {
+        if (isComplete) triggerCompletion();
+        else { updateTimerUI(); showToast(`+1 XP! (${ap.completedSessions} total)`); scheduleBreak(300); }
+      });
+    } else {
+      playChime(); updateTimerUI();
+      if (isComplete) {
+        triggerCompletion();
+      } else {
+        showToast(`+1 XP! (${ap.completedSessions} total)`);
+        scheduleBreak(500);
+      }
+    }
+  } else {
+    playChime();
+    showToast('Break over \u2014 time to focus!');
+    state.currentMode = 'focus'; state.timeLeft = getDuration('focus');
+    updateTimerUI(); showStartPauseButtons(true);
+  }
+}
+
+// ============================================================
+// CINEMATIC EVOLUTION SEQUENCE
+// ============================================================
+let pendingAfterEvo = null;
+
+function runCinematicEvolution(prevStage, newStage, gotShiny, isComplete) {
+  evolving = true;
+  const ap = state.activePokemon;
+  const oldPoke = ap.evolutionChain[prevStage - 1];
+  const newPoke = ap.evolutionChain[newStage - 1];
+  const screen = document.getElementById('screen');
+  const sprite = document.getElementById('pokeSprite');
+  sprite.src = spriteUrl(oldPoke.id, ap.isShiny);
+  playEvolutionSound();
+
+  screen.classList.add('evo-shake');
+  setTimeout(() => {
+    screen.classList.remove('evo-shake');
+    screen.classList.add('evo-whiteout');
+    void sprite.offsetWidth;
+    setTimeout(() => {
+      screen.classList.remove('evo-whiteout');
+      sprite.src = spriteUrl(newPoke.id, ap.isShiny);
+      screen.classList.add('evo-reveal');
+      spawnRevealSparkles();
+      setTimeout(() => {
+        screen.classList.remove('evo-reveal');
+        if (ap.isLegendary && isComplete) {
+          const flare = document.createElement('div');
+          flare.className = 'lens-flare';
+          document.getElementById('spriteContainer').appendChild(flare);
+          screen.classList.add('legendary-screen-shake', 'legendary-finish');
+          setTimeout(() => {
+            flare.remove();
+            screen.classList.remove('legendary-screen-shake', 'legendary-finish');
+          }, 1500);
+        }
+        updateTimerUI();
+        const overlay = document.getElementById('evoOverlay');
+        if (ap.isLegendary && isComplete) {
+          document.getElementById('evoMsg1').textContent =
+            `${capitalize(oldPoke.name)} is radiating a powerful energy!`;
+        } else {
+          document.getElementById('evoMsg1').textContent =
+            `Congratulations! ${capitalize(oldPoke.name)} evolved into`;
+        }
+        document.getElementById('evoNewSprite').src = spriteUrl(newPoke.id, ap.isShiny);
+        document.getElementById('evoMsg2').textContent = capitalize(newPoke.name) + '!';
+        overlay.classList.add('visible');
+        pendingAfterEvo = () => {
+          if (gotShiny) {
+            triggerShinyReveal(() => {
+              if (isComplete) triggerCompletion();
+              else scheduleBreak(300);
+            });
+          } else if (isComplete) {
+            triggerCompletion();
+          } else {
+            scheduleBreak(300);
+          }
+        };
+      }, 900);
+    }, 1000);
+  }, 1200);
+}
+
+function spawnRevealSparkles() {
+  const container = document.getElementById('spriteContainer');
+  const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+  angles.forEach(angle => {
+    const sp = document.createElement('span');
+    sp.className = 'evo-sparkle';
+    sp.textContent = '\u2728';
+    const rad = angle * Math.PI / 180;
+    const dist = 40 + Math.random() * 25;
+    sp.style.setProperty('--sx', `${Math.cos(rad) * dist}px`);
+    sp.style.setProperty('--sy', `${Math.sin(rad) * dist}px`);
+    sp.style.left = '50%'; sp.style.top = '50%';
+    container.appendChild(sp);
+    setTimeout(() => sp.remove(), 1300);
+  });
+}
+
+function dismissEvoOverlay() {
+  document.getElementById('evoOverlay').classList.remove('visible');
+  evolving = false;
+  if (pendingAfterEvo) { const fn = pendingAfterEvo; pendingAfterEvo = null; fn(); }
+}
+
+// ============================================================
+// SHINY REVEAL
+// ============================================================
+let pendingAfterShiny = null;
+function triggerShinyReveal(callback) {
+  playShinySound();
+  const ap = state.activePokemon;
+  const poke = ap.evolutionChain[ap.currentStage - 1];
+  document.getElementById('shinySprite').src = spriteUrl(poke.id, true);
+  document.getElementById('shinyName').textContent = `Shiny ${capitalize(poke.name)}!`;
+  document.getElementById('shinyBanner').classList.add('visible');
+  pendingAfterShiny = callback;
+}
+function dismissShiny() {
+  document.getElementById('shinyBanner').classList.remove('visible');
+  updateTimerUI();
+  if (pendingAfterShiny) { const fn = pendingAfterShiny; pendingAfterShiny = null; fn(); }
+}
+
+// ============================================================
+// COMPLETION
+// ============================================================
+function triggerCompletion() {
+  playEvolutionSound();
+  const ap = state.activePokemon;
+  const finalIdx = Math.min(ap.chainLength, 3) - 1;
+  const finalPoke = ap.evolutionChain[finalIdx];
+
+  if (ap.isLegendary) {
+    const screen = document.getElementById('screen');
+    const flare = document.createElement('div');
+    flare.className = 'lens-flare';
+    document.getElementById('spriteContainer').appendChild(flare);
+    screen.classList.add('legendary-screen-shake', 'legendary-finish');
+    setTimeout(() => {
+      flare.remove();
+      screen.classList.remove('legendary-screen-shake', 'legendary-finish');
+    }, 1500);
+  }
+
+  // Build per-stage data for the gallery (stages up to the real chain length)
+  const caughtStages = ap.evolutionChain
+    .slice(0, ap.chainLength)
+    .map(s => ({ id: s.id, name: s.name, spriteUrl: spriteUrl(s.id, ap.isShiny) }));
+
+  state.pokedex.push({
+    id: finalPoke.id, name: finalPoke.name,
+    isShiny: ap.isShiny, isLegendary: ap.isLegendary,
+    spriteUrl: spriteUrl(finalPoke.id, ap.isShiny),
+    // Gallery fields
+    stages:           caughtStages,
+    chainLength:      ap.chainLength,
+    reachedStage:     ap.currentStage,
+    completedSessions:ap.completedSessions,
+    lineKey:          ap.evolutionChain[0].name,   // base-form name → line identifier
+  });
+  state.isFirstRun = false;
+  saveState(); updateDexBadge();
+
+  const displayName = (ap.isShiny ? '\u2728 Shiny ' : '') + capitalize(finalPoke.name);
+  const title = ap.isLegendary ? 'Legendary Caught!' : ap.chainLength === 1 ? 'Pokemon Caught!' : 'Evolution Complete!';
+  document.getElementById('completeTitle').textContent = title;
+  document.getElementById('completeSprite').src = spriteUrl(finalPoke.id, ap.isShiny);
+  document.getElementById('completeName').textContent = displayName;
+  document.getElementById('completeSub').textContent = `${displayName} has been added to your Pokedex!`;
+  document.getElementById('completeBanner').classList.add('visible');
+}
+
+async function startNextRound() {
+  document.getElementById('completeBanner').classList.remove('visible');
+  state.activePokemon = null; saveState();
+  await showSelectionScreen();
+}
+
+// ============================================================
+// BREAK
+// ============================================================
+function scheduleBreak(delay) {
+  setTimeout(() => {
+    state.currentMode = 'break'; state.timeLeft = getDuration('break');
+    updateTimerUI(); showStartPauseButtons(true);
+  }, delay);
+}
+
+// ============================================================
+// SELECTION
+// ============================================================
+async function showSelectionScreen() {
+  showView('viewSelect');
+  const container = document.getElementById('starterOptions');
+  container.innerHTML = '';
+
+  if (state.isFirstRun) {
+    document.getElementById('selectTitle').textContent = 'Choose Your Starter!';
+    document.getElementById('selectSubtitle').textContent = 'Begin your focus journey';
+    for (const id of CLASSIC_STARTERS) {
+      const poke = await fetchPokemonBasic(id);
+      addStarterCard(container, poke);
+    }
+  } else {
+    document.getElementById('selectTitle').textContent = 'Choose Your Next Pokemon!';
+    document.getElementById('selectSubtitle').textContent = 'A new focus journey awaits';
+    const placeholders = [];
+    for (let i = 0; i < 5; i++) {
+      const card = document.createElement('div');
+      card.className = 'starter-card loading';
+      card.innerHTML = '<img src="" alt=""><div class="name">Loading</div>';
+      container.appendChild(card); placeholders.push(card);
+    }
+    const randoms = await fetchRandomBasePokemon(5);
+    placeholders.forEach((card, i) => {
+      if (randoms[i]) {
+        const p = randoms[i];
+        card.className = 'starter-card' + (p.isLegendary ? ' legendary' : '');
+        card.innerHTML = `<img src="${spriteUrl(p.id,false)}" alt="${p.name}"><div class="name">${p.name}</div>` +
+          (p.isLegendary ? '<span class="rarity-badge">\u2605 Legendary</span>' : '');
+        card.addEventListener('click', () => selectPokemon(p.id, p.isLegendary));
+      } else card.remove();
+    });
+  }
+}
+
+function addStarterCard(container, poke, legendary) {
+  const card = document.createElement('div');
+  card.className = 'starter-card' + (legendary ? ' legendary' : '');
+  card.innerHTML = `<img src="${spriteUrl(poke.id,false)}" alt="${poke.name}"><div class="name">${poke.name}</div>` +
+    (legendary ? '<span class="rarity-badge">\u2605 Legendary</span>' : '');
+  card.addEventListener('click', () => selectPokemon(poke.id, legendary));
+  container.appendChild(card);
+}
+
+async function selectPokemon(pokemonId, isLegendary) {
+  document.querySelectorAll('.starter-card').forEach(c => { c.style.pointerEvents='none'; c.style.opacity='.5'; });
+  let chain, chainLength;
+  try {
+    const result = await fetchEvolutionChain(pokemonId);
+    chain = result.stages;
+    chainLength = result.chainLength;
+  } catch (e) {
+    const poke = await fetchPokemonBasic(pokemonId);
+    chain = [poke, poke, poke];
+    chainLength = 1;
+  }
+  state.activePokemon = {
+    baseId: pokemonId, evolutionChain: chain, chainLength,
+    completedSessions: 0, currentStage: 1, isShiny: false,
+    isLegendary: !!isLegendary
+  };
+  state.currentMode = 'focus'; state.timeLeft = getDuration('focus'); state.running = false;
+  saveState(); showView('viewTimer'); updateTimerUI();
+}
+
+// ============================================================
+// POKEDEX GALLERY
+// ============================================================
+function showPokedex() {
+  if (state.running) pauseTimer();
+  buildPokedexGrid(); showView('viewPokedex');
+}
+function hidePokedex() {
+  if (state.activePokemon) { showView('viewTimer'); updateTimerUI(); }
+  else showSelectionScreen();
+}
+function buildPokedexGrid() {
+  const grid = document.getElementById('pokedexGrid');
+  grid.innerHTML = '';
+  if (state.pokedex.length === 0) {
+    grid.innerHTML = '<div class="dex-empty">No Pokemon caught yet!<br>Start your focus journey to add one.</div>';
+    return;
+  }
+
+  // Deduplicate: keep one entry per lineKey with the highest reachedStage
+  const lineMap = new Map();
+  for (const entry of state.pokedex) {
+    const key = entry.lineKey ?? entry.name;
+    const existing = lineMap.get(key);
+    if (!existing || (entry.reachedStage ?? 1) > (existing.reachedStage ?? 1)) {
+      lineMap.set(key, entry);
+    }
+  }
+
+  // flatMap: each entry expands into reachedStage individual cards
+  const displayedCards = Array.from(lineMap.values()).flatMap(entry => {
+    const stages = entry.stages?.length
+      ? entry.stages
+      : [{ id: entry.id, name: entry.name, spriteUrl: entry.spriteUrl }];
+    const reached = entry.reachedStage ?? stages.length;
+    return stages.slice(0, reached).map((stage, i) => ({
+      ...stage,
+      displayStage: i + 1,
+      totalStages: stages.length,
+      isFinal: (i + 1) === reached,
+      sessions: entry.completedSessions,
+      isShiny: entry.isShiny,
+      isLegendary: entry.isLegendary,
+      lineKey: entry.lineKey ?? entry.name,
+    }));
+  });
+
+  displayedCards.forEach(card => {
+    const isFinal = card.isFinal;
+    const d = document.createElement('div');
+    d.className = 'dex-entry'
+      + (isFinal && card.isShiny     ? ' shiny'     : '')
+      + (isFinal && card.isLegendary ? ' legendary' : '');
+
+    d.innerHTML =
+      (isFinal && card.isLegendary ? '<div class="dex-legendary-badge">\u2605</div>' : '') +
+      (isFinal && card.isShiny     ? '<div class="dex-shiny-badge">\u2728</div>'     : '') +
+      `<img src="${card.spriteUrl}" alt="${card.name}">` +
+      `<div class="dex-name">${card.name}</div>`;
+
+    grid.appendChild(d);
+  });
+}
+
+// ============================================================
+// DEV TOOLS
+// ============================================================
+function toggleDevPanel() { document.getElementById('devPanel').classList.toggle('open'); }
+
+function devQuickFinish() {
+  document.getElementById('devPanel').classList.remove('open');
+  if (!state.activePokemon) return;
+  if (!state.running) {
+    state.currentMode = 'focus'; state.timeLeft = 3; updateTimerUI(); startTimer();
+  } else {
+    state.timeLeft = 3; updateTimerDisplay();
+  }
+}
+
+function devForceShiny() {
+  document.getElementById('devPanel').classList.remove('open');
+  if (!state.activePokemon) return;
+  if (state.activePokemon.isShiny) {
+    showToast('Already shiny!', true); return;
+  }
+  forceShinyNext = true;
+  showToast('Shiny guaranteed next session!', true);
+}
+
+function devSkipToFinal() {
+  document.getElementById('devPanel').classList.remove('open');
+  if (!state.activePokemon) return;
+  if (state.running) pauseTimer();
+  const ap = state.activePokemon;
+  const thresholds = getAPThresholds();
+  ap.completedSessions = MASTERY_SESSIONS;
+  ap.currentStage = getStageForSessions(ap.completedSessions, thresholds);
+  saveState(); updateTimerUI();
+  triggerCompletion();
+}
+
+async function devForceLegendary() {
+  document.getElementById('devPanel').classList.remove('open');
+  if (state.running) pauseTimer();
+  forceLegendaryNext = true;
+  state.activePokemon = null;
+  state.isFirstRun = false;
+  saveState();
+  showToast('Legendary guaranteed in next pool!');
+  await showSelectionScreen();
+}
+
+async function devClearData() {
+  document.getElementById('devPanel').classList.remove('open');
+  if (state.running) pauseTimer();
+  localStorage.removeItem('pokedoro');
+  state.isFirstRun = true; state.activePokemon = null; state.pokedex = [];
+  state.currentMode = 'focus'; state.timeLeft = getDuration('focus'); state.running = false;
+  evolving = false; forceShinyNext = false; forceLegendaryNext = false;
+  document.getElementById('evoOverlay').classList.remove('visible');
+  document.getElementById('shinyBanner').classList.remove('visible');
+  document.getElementById('completeBanner').classList.remove('visible');
+  document.getElementById('screen').classList.remove('evo-shake','evo-whiteout','evo-reveal');
+  updateDexBadge();
+  await showSelectionScreen();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+(async function init() {
+  updateDexBadge();
+  if (loadState() && state.activePokemon) {
+    state.currentMode = 'focus'; state.timeLeft = getDuration('focus'); state.running = false;
+    updateDexBadge(); showView('viewTimer'); updateTimerUI();
+  } else {
+    await showSelectionScreen();
+  }
+})();
+</script>
+
+<!-- ===== SETTINGS OVERLAY ===== -->
+<div class="settings-overlay" id="settingsOverlay" onclick="handleSettingsOverlayClick(event)">
+  <div class="settings-panel" id="settingsPanel">
+
+    <div class="settings-panel-header">
+      <h3>Settings</h3>
+      <button class="settings-close" onclick="closeSettings()">✕</button>
+    </div>
+
+    <!-- Timer Durations -->
+    <div class="s-row">
+      <span class="s-label">Timer</span>
+      <div style="display:flex;gap:10px">
+        <div class="s-num-wrap">
+          <span class="s-num-sub">Focus</span>
+          <input class="s-num" type="number" id="sFocusTime" min="1" max="99" value="25"
+            oninput="this.value=Math.min(99,Math.max(1,this.value|0))">
+        </div>
+        <div class="s-num-wrap">
+          <span class="s-num-sub">Break</span>
+          <input class="s-num" type="number" id="sBreakTime" min="1" max="99" value="5"
+            oninput="this.value=Math.min(99,Math.max(1,this.value|0))">
+        </div>
+      </div>
+    </div>
+
+    <div class="s-divider"></div>
+
+    <!-- SFX Volume -->
+    <div class="s-row">
+      <span class="s-label">SFX Vol</span>
+      <div class="s-range-wrap">
+        <div class="s-range-track">
+          <div class="s-range-fill" id="sVolFill" style="width:70%"></div>
+          <input class="s-range-input" type="range" min="0" max="100" value="70" id="sSfxVolume"
+            oninput="updateVolume(this.value)">
+        </div>
+        <span class="s-range-val" id="sVolVal">70</span>
+      </div>
+    </div>
+
+    <div class="s-divider"></div>
+
+    <!-- Apply -->
+    <button class="s-apply-btn" onclick="handleSaveSettings()">Apply Changes</button>
+
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SETTINGS OVERLAY  (callback pattern — mirrors React useState)
+// ============================================================
+let isSettingsOpen = false;
+
+/* ── open: sync inputs → current settings state ── */
+function openSettings() {
+  isSettingsOpen = true;
+  document.getElementById('sFocusTime').value  = settings.focusTime;
+  document.getElementById('sBreakTime').value  = settings.breakTime;
+  document.getElementById('sSfxVolume').value  = settings.sfxVolume;
+  updateVolume(settings.sfxVolume);
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function closeSettings() {
+  isSettingsOpen = false;
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+
+function handleSettingsOverlayClick(e) {
+  if (e.target === document.getElementById('settingsOverlay')) closeSettings();
+}
+
+/* ── handleSaveSettings: callback passed "up" to parent state ── */
+function handleSaveSettings() {
+  const newSettings = {
+    focusTime: Math.min(99, Math.max(1, parseInt(document.getElementById('sFocusTime').value) || 25)),
+    breakTime: Math.min(99, Math.max(1, parseInt(document.getElementById('sBreakTime').value) || 5)),
+    sfxVolume: parseInt(document.getElementById('sSfxVolume').value) || 70,
+  };
+
+  // Update parent settings state
+  settings = newSettings;
+  saveState();
+
+  // Apply immediately: update live timer if not running
+  if (!state.running) {
+    state.timeLeft = getDuration(state.currentMode);
+    updateTimerUI();
+  }
+
+  closeSettings(); // auto-close after save
+}
+
+function updateVolume(val) {
+  document.getElementById('sVolFill').style.width = val + '%';
+  document.getElementById('sVolVal').textContent  = val;
+}
+
+document.querySelector('.settings-btn').addEventListener('click', openSettings);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && isSettingsOpen) closeSettings(); });
+
+// Service Worker registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
